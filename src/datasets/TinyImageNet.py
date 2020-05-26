@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
 
 from ..datastructures import DataSample
 from ..interfaces import Dataset
@@ -27,7 +28,21 @@ class TinyImageNetDataset(Dataset):
         selected_classes = set(selected_classes[:self.num_classes])
 
         filtered_data = [x for x in data if x.get_label() in selected_classes]
+
         (all_paths, all_labels) = ([x.get_path() for x in filtered_data], [x.get_label() for x in filtered_data])
+
+        # One-hot encode labels
+        encoder = OneHotEncoder(sparse=False)
+        sorted_labels = sorted(list(set(all_labels)))
+        encoder_labels = [[sorted_labels[i]] for i in range(len(sorted_labels))]
+        encoder.fit(encoder_labels)
+        transformed_labels = encoder.transform(encoder_labels).argmax(axis=1)
+
+        all_labels = encoder.transform([[x] for x in all_labels]).argmax(axis=1)
+
+        self.encoding = dict((sorted_labels[i], int(transformed_labels[i])) for i in range(len(sorted_labels)))
+
+        # Split datasets
         X_all_train, X_holdout, y_all_train, y_holdout = train_test_split(all_paths, all_labels, test_size=self.holdout_pct)
         X_train, X_test, y_train, y_test = train_test_split(X_all_train, y_all_train, test_size=self.test_pct)
 
@@ -45,6 +60,9 @@ class TinyImageNetDataset(Dataset):
 
     def get_holdout_data(self):
         return self.holdout_data
+
+    def get_encoding(self):
+        return self.encoding
 
     def __path_to_label(self, path):
         return path.split(os.path.sep)[-1].split('_')[0]

@@ -53,10 +53,7 @@ class FeatureExtractedKMeansClusters(RepresentativeSelection):
         for img_class in partitioned.keys():
             paths = partitioned[img_class]
             logger.debug('---- Loading {} images for class: {}'.format(len(paths), img_class))
-
             representatives.extend([DataSample(x, img_class) for x in self.__find_representatives(paths)])
-
-            logger.debug('---- Extracting features for images...')
 
         return representatives
 
@@ -72,10 +69,17 @@ class FeatureExtractedKMeansClusters(RepresentativeSelection):
 
     def __find_representatives(self, paths):
         loaded = self.__load_images(paths)
-        features = self.__extract_features(loaded)
+        
+        logger.debug('---- Extracting features for images...')
+        extracted_features = self.__extract_features(loaded)
+        f_shape = extracted_features.shape
+        # Flatten features to a vector
+        features = np.reshape(extracted_features, (f_shape[0], f_shape[1]*f_shape[2]*f_shape[3]))
 
+        logger.debug('---- Calculating KMeans clusters...')
         kmeans = KMeans(n_clusters=self.num_representatives, random_state=0).fit(features)
         
+        logger.debug('---- Selecting representatives...')
         representatives = pairwise_distances_argmin(kmeans.cluster_centers_, features)
 
         return [paths[x] for x in representatives]
@@ -90,6 +94,8 @@ class FeatureExtractedKMeansClusters(RepresentativeSelection):
         for i in range(0, data.shape[0], batch_size):
             logger.debug('Extracting features from batch: {} (batch size = {}, total data = {})'.format(i / batch_size, batch_size, data.shape[0]))
             batch = data[i:(i+batch_size)]
-            features.append(self.vgg19(batch).data.detach().numpy())
+            features.append(self.vgg19.features(batch).data.detach().numpy())
+            if i > 2:
+                break
         return np.vstack(features)
 

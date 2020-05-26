@@ -60,9 +60,9 @@ class Pipeline:
         trained_model_path = self.__load_or_train_model(augmented_data, test_data)
 
         result_path = self.evaluation_strategy.evaluate(holdout_data, trained_model_path)
+        self.__write_output_metadata('result-metadata.json', {'result_path': result_path})
 
         logger.info('Evaluating results...')
-        self.__write_output_metadata(trained_model_path, result_path)
 
         return result_path
 
@@ -88,7 +88,7 @@ class Pipeline:
             self.loaded_augmented_data = self.__load_intermediate('augmented_data.csv')
             logger.info('Loaded pre-augmented dataset.')
         if training:
-            self.loaded_trained_model = self.__load_output_metadata('model_path')
+            self.loaded_trained_model = self.__load_output_metadata('model-metadata.json')['model_path']
             logger.info('Loaded pre-trained model.')
 
     def __load_or_compute_dataset(self):
@@ -104,6 +104,7 @@ class Pipeline:
             self.__write_intermediate('training_data.csv', training_data)
             self.__write_intermediate('test_data.csv', test_data)
             self.__write_intermediate('holdout_data.csv', holdout_data)
+            self.__write_output_metadata('label_encoding.json', self.dataset.get_encoding())
         
             return (training_data, test_data, holdout_data)
         
@@ -130,7 +131,9 @@ class Pipeline:
     def __load_or_train_model(self, augmented_data, test_data):
         if not self.loaded_trained_model:
             logger.info('Training model...')
-            return self.training_strategy.train(augmented_data, test_data)
+            trained = self.training_strategy.train(augmented_data, test_data)
+            self.__write_output_metadata('model-metadata.json', {'model_path': trained})
+            return trained
         return self.loaded_trained_model
 
     def __write_intermediate(self, filename: str, data: List[DataSample]):
@@ -151,23 +154,22 @@ class Pipeline:
         with open(path, 'r') as f:
             return [DataSample(*(x.split('\t')),) for x in f.readlines()]
 
-    def __write_output_metadata(self, model_path: str, result_path: str):
+    def __write_output_metadata(self, filename: str, data):
         if not self.save_intermediate:
             return
 
         self.__make_intermediate_dir()
 
-        path = self.__intermediate_path('result-metadata.json')
-        data = {'model_path': model_path, 'result_path': result_path}
+        path = self.__intermediate_path(filename)
         with open(path, 'w') as f:
             json.dump(data, f)
 
         logger.debug('-- Wrote result metadata: {}'.format(path))
 
-    def __load_output_metadata(self, field):
-        path = self.__intermediate_path('result-metadata.json')
+    def __load_output_metadata(self, filename):
+        path = self.__intermediate_path(filename)
         with open(path, 'r') as f:
-            return json.load(path)[field]
+            return json.load(path)
 
     def __make_intermediate_dir(self):
         directory = self.__save_dir()

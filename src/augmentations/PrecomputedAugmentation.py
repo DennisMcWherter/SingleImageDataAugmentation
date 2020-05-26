@@ -11,6 +11,7 @@ class PrecomputedAugmentation(AugmentationStrategy):
     def __init__(self, filepath: str):
         self.filepath = filepath
 
-    def augment_data(input_dataset):
+    def augment_data(self, input_dataset):
         with open(self.filepath, 'r') as f:
             return [DataSample(*(x.split('\t'))) for x in f.readlines()]
+

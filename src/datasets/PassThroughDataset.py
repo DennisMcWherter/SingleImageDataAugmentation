@@ -10,3 +10,6 @@ class PassThroughDataset(Dataset):
 
     def get_holdout_data(self):
         return []
+
+    def get_encoding(self):
+        return {}

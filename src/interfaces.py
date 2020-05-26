@@ -40,6 +40,14 @@ class Dataset(metaclass=ABCMeta):
         """
         pass
 
+    def get_encoding():
+        """ Get the one-hot encoding of categories to numeric values
+        
+        Returns:
+            dict: From string values to numeric encoded values
+        """
+        pass
+
 class RepresentativeSelection(metaclass=ABCMeta):
     """ Dataset representative selection algorithm.
     """

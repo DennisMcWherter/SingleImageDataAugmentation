@@ -2,3 +2,5 @@ __pycache__
 intermediate/
 tiny-imagenet-200*
 output/
+SinGANSource
+TrainedModels

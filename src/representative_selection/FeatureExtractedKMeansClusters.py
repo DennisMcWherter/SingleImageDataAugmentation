@@ -31,6 +31,9 @@ class FeatureExtractedKMeansClusters(RepresentativeSelection):
         self.class_whitelist = set(class_whitelist) if class_whitelist else None
         self.vgg19 = models.vgg19(pretrained=True)
 
+        if torch.cuda.is_available():
+            self.vgg19 = self.vgg19.cuda()
+
         # ToTensor will convert an RGB image (HxWxC) with values [0, 255] to
         # an RGB tensor of (CxHxW) with values [0,1]
         toTensor = transforms.ToTensor()
@@ -85,7 +88,10 @@ class FeatureExtractedKMeansClusters(RepresentativeSelection):
         return [paths[x] for x in representatives]
 
     def __load_images(self, data):
-        return torch.stack([self.normalized(load_rgb_image(x)) for x in data])
+        result = torch.stack([self.normalized(load_rgb_image(x)) for x in data])
+        if torch.cuda.is_available():
+            result = result.cuda()
+        return result
 
     def __extract_features(self, data):
         features = []
@@ -94,8 +100,6 @@ class FeatureExtractedKMeansClusters(RepresentativeSelection):
         for i in range(0, data.shape[0], batch_size):
             logger.debug('Extracting features from batch: {} (batch size = {}, total data = {})'.format(i / batch_size, batch_size, data.shape[0]))
             batch = data[i:(i+batch_size)]
-            features.append(self.vgg19.features(batch).data.detach().numpy())
-            if i > 2:
-                break
+            features.append(self.vgg19.features(batch).data.cpu().detach().numpy())
         return np.vstack(features)
 

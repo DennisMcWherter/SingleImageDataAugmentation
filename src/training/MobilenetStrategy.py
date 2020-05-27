@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 
 import numpy as np
@@ -16,12 +17,16 @@ logger = logging.getLogger(__name__)
 
 class MobilenetV2Strategy(TrainingStrategy):
 
-    def __init__(self, output_path, num_classes, num_epochs=100):
+    def __init__(self, output_path, num_classes, num_epochs=1):
         self.output_path = output_path
         self.num_epochs = num_epochs
         self.num_classes = num_classes
 
         self.model = models.mobilenet_v2(pretrained=False, num_classes=num_classes)
+
+        if torch.cuda.is_available():
+            self.model = self.model.cuda()
+
         self.loss_fn = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=1e-3)
     
@@ -35,8 +40,14 @@ class MobilenetV2Strategy(TrainingStrategy):
             start = time.time()
             logger.info('Training epoch {}/{}'.format(epoch + 1, self.num_epochs))
 
+            epoch_total_accuracy = 0.0
+            epoch_total_samples = 0.0
             epoch_loss = 0.0
             for i, (inputs, labels) in enumerate(train_inputs):
+                if torch.cuda.is_available():
+                    inputs = inputs.cuda()
+                    labels = labels.cuda()
+
                 self.model.train()
 
                 self.optimizer.zero_grad()
@@ -45,33 +56,57 @@ class MobilenetV2Strategy(TrainingStrategy):
                 loss.backward()
                 self.optimizer.step()
 
+                epoch_total_samples += len(labels)
+                batch_accuracy = self.__compute_accuracy(outputs, labels)
+                epoch_total_accuracy += batch_accuracy
+
                 epoch_loss += loss.item()
-                if i % 2 == 0:
-                    logger.info('---- Training Loss: {}'.format(epoch_loss / (i + 1.)))
+                if i % 20 == 0:
+                    logger.info('---- Training Loss: {}, Training Accuracy: {}'.format(epoch_loss / (i + 1.), batch_accuracy))
 
             end = time.time()
 
             epoch_avg_loss = epoch_loss / len(train_inputs)
-            test_loss = self.__test(test_inputs)
+            epoch_avg_accuracy = epoch_total_accuracy / epoch_total_samples
+            test_loss, test_accuracy = self.__test(test_inputs)
 
-            logger.info('-- Epoch training loss: {}, test loss: {} (runtime: {} seconds)'.format(epoch_avg_loss, test_loss, (end - start)))
+            logger.info('-- Epoch {} Results (runtime: {} seconds) --'.format(epoch + 1, (end - start)))
+            logger.info('---- Epoch training loss: {}, training accuracy: {}'.format(epoch_avg_loss, epoch_avg_accuracy))
+            logger.info('---- Epoch test loss: {}, test accuracy: {}'.format(test_loss, test_accuracy))
 
         logger.info('Saving trained model to: {}'.format(self.output_path))
-        
-        torch.save(self.model.state_dict(), self.output_path)
 
-        return self.output_path
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
+        
+        model_path = os.path.join(self.output_path, 'mobilenet.dict')
+        torch.save(self.model.state_dict(), model_path)
+
+        return model_path
 
     def __test(self, test_inputs):
         for i, (inputs, labels) in enumerate(test_inputs):
+            if torch.cuda.is_available():
+                inputs = inputs.cuda()
+                labels = labels.cuda()
+
             self.model.eval()
 
             outputs = self.model(inputs)
             loss = self.loss_fn(outputs, labels)
 
-            return loss.item()
+            accuracy = self.__compute_accuracy(outputs, labels)
+
+            return (loss.item(), accuracy)
+
+    def __compute_accuracy(self, outputs, labels):
+        out_array = outputs.data.cpu().detach().numpy()
+        labels_array = labels.data.cpu().detach().numpy()
+        results = out_array.argmax(axis=1)
+        matches = results == labels_array
+        return float(np.count_nonzero(matches)) / len(labels)
 
     def __load_dataset(self, samples):
         dataset = convert_samples_to_dataset(samples, transform=transforms.ToTensor())
-        return DataLoader(dataset, batch_size=100, shuffle=False, num_workers=4)
+        return DataLoader(dataset, batch_size=25, shuffle=False)
 

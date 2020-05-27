@@ -5,6 +5,6 @@ from src.prebuilt_pipelines import FirstSinGANPipeline
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
-FirstSinGANPipeline.restore_pipeline(representatives=True)
+FirstSinGANPipeline.restore_pipeline(representatives=True, training=True)
 FirstSinGANPipeline.execute()
 

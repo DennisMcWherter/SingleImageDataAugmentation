@@ -169,7 +169,7 @@ class Pipeline:
     def __load_output_metadata(self, filename):
         path = self.__intermediate_path(filename)
         with open(path, 'r') as f:
-            return json.load(path)
+            return json.load(f)
 
     def __make_intermediate_dir(self):
         directory = self.__save_dir()

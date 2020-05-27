@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from torchvision import models, transforms
 
 from ..interfaces import TrainingStrategy
-from ..torch_utils import convert_samples_to_dataset
+from ..torch_utils import compute_accuracy, convert_samples_to_dataset, test_model
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ class MobilenetV2Strategy(TrainingStrategy):
                 self.optimizer.step()
 
                 epoch_total_samples += len(labels)
-                batch_accuracy = self.__compute_accuracy(outputs, labels)
+                batch_accuracy = compute_accuracy(outputs, labels)
                 epoch_total_accuracy += batch_accuracy
 
                 epoch_loss += loss.item()
@@ -68,7 +68,7 @@ class MobilenetV2Strategy(TrainingStrategy):
 
             epoch_avg_loss = epoch_loss / len(train_inputs)
             epoch_avg_accuracy = epoch_total_accuracy / epoch_total_samples
-            test_loss, test_accuracy = self.__test(test_inputs)
+            test_loss, test_accuracy = test_model(self.model, self.loss_fn, test_inputs)
 
             logger.info('-- Epoch {} Results (runtime: {} seconds) --'.format(epoch + 1, (end - start)))
             logger.info('---- Epoch training loss: {}, training accuracy: {}'.format(epoch_avg_loss, epoch_avg_accuracy))
@@ -83,28 +83,6 @@ class MobilenetV2Strategy(TrainingStrategy):
         torch.save(self.model.state_dict(), model_path)
 
         return model_path
-
-    def __test(self, test_inputs):
-        for i, (inputs, labels) in enumerate(test_inputs):
-            if torch.cuda.is_available():
-                inputs = inputs.cuda()
-                labels = labels.cuda()
-
-            self.model.eval()
-
-            outputs = self.model(inputs)
-            loss = self.loss_fn(outputs, labels)
-
-            accuracy = self.__compute_accuracy(outputs, labels)
-
-            return (loss.item(), accuracy)
-
-    def __compute_accuracy(self, outputs, labels):
-        out_array = outputs.data.cpu().detach().numpy()
-        labels_array = labels.data.cpu().detach().numpy()
-        results = out_array.argmax(axis=1)
-        matches = results == labels_array
-        return float(np.count_nonzero(matches)) / len(labels)
 
     def __load_dataset(self, samples):
         dataset = convert_samples_to_dataset(samples, transform=transforms.ToTensor())

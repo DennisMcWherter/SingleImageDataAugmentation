@@ -20,5 +20,5 @@ FirstSinGANPipeline = Pipeline(pipeline_name="first_singan_pipeline",
                                selection_strategy=FeatureExtractedKMeansClusters.FeatureExtractedKMeansClusters(),
                                augmentation_strategy=PrecomputedAugmentation.PrecomputedAugmentation('./intermediate/first_singan_pipeline/test_data.csv'),
                                training_strategy=MobilenetStrategy.MobilenetV2Strategy('output/mobilenet_first_singan/model', num_classes=30),
-                               evaluation_strategy=MobilenetEvaluation.MobilenetV2EvaluationStrategy(num_classes=30))
+                               evaluation_strategy=MobilenetEvaluation.MobilenetV2EvaluationStrategy(output_path='output/mobilenet_first_singan/results', num_classes=30))
 

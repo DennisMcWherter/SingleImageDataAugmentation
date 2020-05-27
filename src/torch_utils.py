@@ -1,18 +1,55 @@
-from typing import List
+import logging
+from typing import List, Tuple
 
 import numpy as np
 
 import torch
-from torch.utils import data
 
 from .datastructures import DataSample
 from .image_utils import load_rgb_image
 from .interfaces import Dataset
 
-def convert_samples_to_dataset(samples: List[DataSample], transform=None, labelTransform=None) -> data.Dataset:
+logger = logging.getLogger(__name__)
+
+def convert_samples_to_dataset(samples: List[DataSample], transform=None, labelTransform=None) -> torch.utils.data.Dataset:
     return TorchDataset(samples, transform, labelTransform)
 
-class TorchDataset(data.Dataset):
+def compute_accuracy(outputs: torch.Tensor, labels: torch.Tensor) -> Tuple[float, float]:
+    out_array = outputs.data.cpu().detach().numpy()
+    labels_array = labels.data.cpu().detach().numpy()
+    results = out_array.argmax(axis=1)
+    matches = results == labels_array
+    return float(np.count_nonzero(matches)) / len(labels)
+
+def test_model(model, loss_fn, test_inputs):
+    total_loss = 0.0
+    total_accuracy = 0.0
+    total_batches = 0.0
+    for i, (inputs, labels) in enumerate(test_inputs):
+        if torch.cuda.is_available():
+            inputs = inputs.cuda()
+            labels = labels.cuda()
+
+        model.eval()
+
+        outputs = model(inputs)
+        loss = loss_fn(outputs, labels)
+
+        accuracy = compute_accuracy(outputs, labels)
+
+        if i % 5 == 0:
+            logger.info('Minibatch test loss: {}, test accuracy: {}'.format(loss.item(), accuracy))
+
+        total_loss += loss.item()
+        total_accuracy += accuracy
+        total_batches += 1.0
+
+    avg_loss = total_loss / total_batches
+    avg_accuracy = total_accuracy / total_batches
+
+    return (avg_loss, avg_accuracy)
+
+class TorchDataset(torch.utils.data.Dataset):
     """ Convert our internal representation of a dataset into a
         torch dataset containing labeled images.
     """

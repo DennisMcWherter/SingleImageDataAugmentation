@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def convert_samples_to_dataset(samples: List[DataSample], transform=None, labelTransform=None) -> torch.utils.data.Dataset:
     return TorchDataset(samples, transform, labelTransform)
 
-def compute_accuracy(outputs: torch.Tensor, labels: torch.Tensor) -> Tuple[float, float]:
+def compute_accuracy(outputs: torch.Tensor, labels: torch.Tensor) -> float:
     out_array = outputs.data.cpu().detach().numpy()
     labels_array = labels.data.cpu().detach().numpy()
     results = out_array.argmax(axis=1)
@@ -22,6 +22,9 @@ def compute_accuracy(outputs: torch.Tensor, labels: torch.Tensor) -> Tuple[float
     return float(np.count_nonzero(matches)) / len(labels)
 
 def test_model(model, loss_fn, test_inputs):
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
     total_loss = 0.0
     total_accuracy = 0.0
     total_batches = 0.0
@@ -32,17 +35,18 @@ def test_model(model, loss_fn, test_inputs):
 
         model.eval()
 
-        outputs = model(inputs)
-        loss = loss_fn(outputs, labels)
+        with torch.no_grad():
+            outputs = model(inputs)
+            loss = loss_fn(outputs, labels)
 
-        accuracy = compute_accuracy(outputs, labels)
+            accuracy = compute_accuracy(outputs, labels)
 
-        if i % 5 == 0:
-            logger.info('Minibatch test loss: {}, test accuracy: {}'.format(loss.item(), accuracy))
+            if i % 5 == 0:
+                logger.info('Minibatch test loss: {}, test accuracy: {}'.format(loss.item(), accuracy))
 
-        total_loss += loss.item()
-        total_accuracy += accuracy
-        total_batches += 1.0
+            total_loss += loss.item()
+            total_accuracy += accuracy
+            total_batches += 1.0
 
     avg_loss = total_loss / total_batches
     avg_accuracy = total_accuracy / total_batches

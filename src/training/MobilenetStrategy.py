@@ -44,6 +44,8 @@ class MobilenetV2Strategy(TrainingStrategy):
             epoch_total_samples = 0.0
             epoch_loss = 0.0
             for i, (inputs, labels) in enumerate(train_inputs):
+                epoch_total_samples += len(labels)
+
                 if torch.cuda.is_available():
                     inputs = inputs.cuda()
                     labels = labels.cuda()
@@ -56,7 +58,6 @@ class MobilenetV2Strategy(TrainingStrategy):
                 loss.backward()
                 self.optimizer.step()
 
-                epoch_total_samples += len(labels)
                 batch_accuracy = compute_accuracy(outputs, labels)
                 epoch_total_accuracy += batch_accuracy
 
@@ -86,5 +87,5 @@ class MobilenetV2Strategy(TrainingStrategy):
 
     def __load_dataset(self, samples):
         dataset = convert_samples_to_dataset(samples, transform=transforms.ToTensor())
-        return DataLoader(dataset, batch_size=25, shuffle=False)
+        return DataLoader(dataset, batch_size=25, shuffle=False, num_workers=4)
 

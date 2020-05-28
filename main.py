@@ -5,7 +5,7 @@ import numpy as np
 
 import torch
 
-from src.prebuilt_pipelines import FirstSinGANPipeline
+from src.prebuilt_pipelines import *
 
 # Set for reproducibility
 np.random.seed(123)
@@ -17,5 +17,6 @@ torch.backends.cudnn.benchmark = False
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #FirstSinGANPipeline.restore_pipeline(representatives=True, training=True, augmentation=False)
-FirstSinGANPipeline.execute()
+#FirstSinGANPipeline.execute()
+ImbalancedNoAug.execute()
 

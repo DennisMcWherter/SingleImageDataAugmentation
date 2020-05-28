@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class MobilenetV2Strategy(TrainingStrategy):
 
-    def __init__(self, output_path, num_classes, num_epochs=1):
+    def __init__(self, output_path, num_classes, num_epochs=100):
         self.output_path = output_path
         self.num_epochs = num_epochs
         self.num_classes = num_classes

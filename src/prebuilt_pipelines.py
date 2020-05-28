@@ -17,6 +17,14 @@ TestPipeline = Pipeline(pipeline_name="test_pipeline",
                         training_strategy=NoTraining.NoTraining('test_model'),
                         evaluation_strategy=NoEvaluation.NoEvaluation('result_path'))
 
+# Imbalanced pipeline that performs no augmentation
+ImbalancedNoAug = Pipeline(pipeline_name="imbalanced_no_aug",
+                           dataset=imbalancedTinyImageNet,
+                           selection_strategy=SelectAll.SelectAllSelection(),
+                           augmentation_strategy=NoAugmentation.NoAugmentation(),
+                           training_strategy=MobilenetStrategy.MobilenetV2Strategy('output/mobilenet_imbalanced_no_aug/model', num_classes=30),
+                           evaluation_strategy=MobilenetEvaluation.MobilenetV2EvaluationStrategy(output_path='output/mobilenet_imbalanced_no_aug/results', num_classes=30))
+
 # First pipeline
 FirstSinGANPipeline = Pipeline(pipeline_name="first_singan_pipeline",
                                dataset=imbalancedTinyImageNet,

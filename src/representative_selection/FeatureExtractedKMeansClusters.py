@@ -100,6 +100,7 @@ class FeatureExtractedKMeansClusters(RepresentativeSelection):
         for i in range(0, data.shape[0], batch_size):
             logger.debug('Extracting features from batch: {} (batch size = {}, total data = {})'.format(i / batch_size, batch_size, data.shape[0]))
             batch = data[i:(i+batch_size)]
-            features.append(self.vgg19.features(batch).data.cpu().detach().numpy())
+            with torch.no_grad():
+                features.append(self.vgg19.features(batch).data.cpu().detach().numpy())
         return np.vstack(features)
 

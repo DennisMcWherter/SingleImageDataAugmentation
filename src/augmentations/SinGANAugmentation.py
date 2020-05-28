@@ -74,7 +74,7 @@ class SinGANAugmentation(AugmentationStrategy):
                 generated_path = str(generated)
                 generated_name = generated_path.split(os.path.sep)[-1]
                 
-                logger.trace('---- Copying generated output: {} to {}'.format(generated_path, labeled_output_dir))
+                logger.debug('---- Copying generated output: {} to {}'.format(generated_path, labeled_output_dir))
                 
                 copy(generated_path, labeled_output_dir)
 

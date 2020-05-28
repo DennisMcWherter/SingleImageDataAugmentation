@@ -28,7 +28,7 @@ ImbalancedNoAug = Pipeline(pipeline_name="imbalanced_no_aug",
 # First pipeline
 FirstSinGANPipeline = Pipeline(pipeline_name="first_singan_pipeline",
                                dataset=imbalancedTinyImageNet,
-                               selection_strategy=FeatureExtractedKMeansClusters.FeatureExtractedKMeansClusters(),
+                               selection_strategy=FeatureExtractedKMeansClusters.FeatureExtractedKMeansClusters(num_representatives=2, class_whitelist=[1,2]),
                                augmentation_strategy=SinGANAugmentation.SinGANAugmentation('./SinGANSource', 'first_singan_pipeline/augmentation'),
                                training_strategy=MobilenetStrategy.MobilenetV2Strategy('output/mobilenet_first_singan/model', num_classes=30),
                                evaluation_strategy=MobilenetEvaluation.MobilenetV2EvaluationStrategy(output_path='output/mobilenet_first_singan/results', num_classes=30))

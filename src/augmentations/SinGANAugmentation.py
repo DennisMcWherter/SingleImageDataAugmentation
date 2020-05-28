@@ -20,7 +20,7 @@ class SinGANAugmentation(AugmentationStrategy):
         self.output_path = output_path
         self.singan_root = singan_root
 
-    def augment_data(self, reps):
+    def augment_data(self, dataset, reps):
         # Free any cached GPU memory for SinGAN
         if torch.cuda.is_available():
             torch.cuda.empty_cache()

@@ -66,13 +66,15 @@ class AugmentationStrategy(metaclass=ABCMeta):
     """ Strategy for executing data augmentation.
     """
 
-    def augment_data(dataset: List[DataSample]) -> List[DataSample]:
+    def augment_data(dataset: List[DataSample], representatives: List[DataSample]) -> List[DataSample]:
         """ Augment a dataset.
 
         Parameters:
-            List[DataSample]: Input dataset to augment
+            List[DataSample]: Full input dataset to augment
+            List[DataSample]: Selected representatives used in augmentation
         Returns:
-            List[DataSample]: Augmented data samples.
+            List[DataSample]: Augmented samples (i.e. not the entire augmented dataset). These samples will
+                              automatically be concatenated to the existing training set.
         """
         pass
 

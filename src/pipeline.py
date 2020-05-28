@@ -113,7 +113,7 @@ class Pipeline:
     def __load_or_augment_data(self, training_data: List[DataSample], representatives: List[DataSample]) -> List[DataSample]:
         if not self.loaded_augmented_data:
             logger.info('Augmenting data...')
-            augmented_samples = self.augmentation_strategy.augment_data(representatives)
+            augmented_samples = self.augmentation_strategy.augment_data(training_data, representatives)
             self.__write_intermediate('augmented_samples.csv', augmented_samples)
             augmented_data = augmented_samples + training_data
             self.__write_intermediate('augmented_data.csv', augmented_data)

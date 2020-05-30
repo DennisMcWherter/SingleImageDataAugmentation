@@ -30,8 +30,6 @@ class ImbalancedDataset(Dataset):
 
         logger.debug('---- Samples before imbalance: {}\n---- Samples after imbalance: {}'.format(len(self.dataset.get_training_data()), len(self.training_data)))
 
-        print(type(self.training_data[0]))
-
     def get_training_data(self):
         return self.training_data
 

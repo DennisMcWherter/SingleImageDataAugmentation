@@ -5,9 +5,10 @@ import time
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from torchvision import models, transforms
+from torchvision import transforms
 
 from ..interfaces import EvaluationStrategy
+from ..models.MobilenetV2 import TestMobilenetV2
 from ..torch_utils import convert_samples_to_dataset, test_model
 
 logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ class MobilenetV2EvaluationStrategy(EvaluationStrategy):
         return path
 
     def __load_model(self, model_path):
-        model = models.mobilenet_v2(num_classes=self.num_classes)
+        model = TestMobilenetV2(num_classes=self.num_classes)
         model.load_state_dict(torch.load(model_path))
         if torch.cuda.is_available():
             model = model.cuda()

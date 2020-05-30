@@ -17,6 +17,6 @@ torch.backends.cudnn.benchmark = False
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #FirstSinGANPipeline.restore_pipeline(representatives=True, training=True, augmentation=False)
-FirstSinGANPipeline.execute()
-#ImbalancedNoAug.execute()
+#FirstSinGANPipeline.execute()
+ImbalancedNoAug.execute()
 

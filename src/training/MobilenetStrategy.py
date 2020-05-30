@@ -8,21 +8,21 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from torchvision import models, transforms
+from torchvision import transforms
 
 from ..interfaces import TrainingStrategy
+from ..models.MobilenetV2 import TestMobilenetV2
 from ..torch_utils import compute_accuracy, convert_samples_to_dataset, test_model
 
 logger = logging.getLogger(__name__)
 
 class MobilenetV2Strategy(TrainingStrategy):
 
-    def __init__(self, output_path, num_classes, num_epochs=100):
+    def __init__(self, output_path, num_classes, num_epochs=50):
         self.output_path = output_path
         self.num_epochs = num_epochs
         self.num_classes = num_classes
-
-        self.model = models.mobilenet_v2(pretrained=False, num_classes=num_classes)
+        self.model = TestMobilenetV2(num_classes)
 
         if torch.cuda.is_available():
             self.model = self.model.cuda()
@@ -80,7 +80,7 @@ class MobilenetV2Strategy(TrainingStrategy):
         if not os.path.exists(self.output_path):
             os.makedirs(self.output_path)
         
-        model_path = os.path.join(self.output_path, 'mobilenet.dict')
+        model_path = os.path.join(self.output_path, 'test-mobilenet.pt')
         torch.save(self.model.state_dict(), model_path)
 
         return model_path

@@ -6,10 +6,58 @@ from ..interfaces import Dataset
 
 logger = logging.getLogger(__name__)
 
+class StratifiedRandomImbalancedDataset(Dataset):
+
+    def __init__(self, dataset: Dataset, min_pct_imbalance=0.2, max_pct_imbalance=0.9, num_labels=3, labels=None):
+        """ Method for randomly sampling within only specified labels. Imbalance is stratified by label.
+
+        Parameters:
+            dataset (Dataset): Dataset to induce imbalance in
+            min_pct_imbalance (float): Minimum percentage to imbalance any class (default=0.2)
+            max_pct_imbalance (float): Maximum percentage to imbalance any class (default=0.9)
+            num_labels (int): Number of labels to induce imbalance (default=3)
+            labels (List[int]): List of labels to specifically imbalance (default=None)
+        """
+        self.imbalanced = ImbalancedDataset(dataset, min_pct_imbalance, max_pct_imbalance)
+        self.labels = labels
+        self.num_labels = 3
+        self.training_data = None
+        self.test = None
+
+    def prepare(self):
+        # This will stratify and induce imbalance across all labels
+        self.imbalanced.prepare()
+
+        # Determine which labels should have imbalance
+        labels = list(set([x.get_label() for x in self.imbalanced.get_training_data()]))
+        np.random.shuffle(labels)
+        selected_labels = set(self.labels if self.labels else labels[:self.num_labels])
+
+        # Build a new dataset where selected classes come from imbalance and others remain untouched
+        self.training_data = []
+        for label in labels:
+            if label in selected_labels:
+                self.training_data.extend([x for x in self.imbalanced.get_training_data() if x.get_label() == label])
+            else:
+                self.training_data.extend([x for x in self.imbalanced.dataset.get_training_data() if x.get_label() == label])
+
+    def get_training_data(self):
+        return self.training_data
+
+    def get_test_data(self):
+        return self.imbalanced.get_test_data()
+
+    def get_holdout_data(self):
+        return self.imbalanced.get_holdout_data()
+
+    def get_encoding(self):
+        return self.imbalanced.get_encoding()
+
 class ImbalancedDataset(Dataset):
 
     def __init__(self, dataset: Dataset, min_pct_imbalance=0.2, max_pct_imbalance=0.9):
-        """ Method to force imbalance on a dataset
+        """ Method to force imbalance on a dataset. This class induces imbalance on the full dataset.
+        Imbalance is stratified per class label.
 
         Parameters:
             dataset (Dataset): Dataset to cause imbalance

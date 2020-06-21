@@ -3,7 +3,6 @@ from typing import List
 
 import numpy as np
 
-import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.cluster import DBSCAN
 from sklearn.mixture import GaussianMixture
@@ -105,6 +104,8 @@ class PCA_DBSCAN_GMM(RepresentativeSelection):
             reps = find_closest(cluster = sub_cluster, means = means)
             #add them to the closest image
             rep_list += list(np.where(X_extracted == rep)[0][1] for rep in reps)
+
+        rep_list = np.random.choice(np.array(rep_list), size = self.num_representatives, replace = False)
 
         return [paths[x] for x in rep_list]
 

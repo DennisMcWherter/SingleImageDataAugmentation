@@ -6,6 +6,7 @@ import numpy as np
 from sklearn.cluster import DBSCAN
 from sklearn.mixture import GaussianMixture
 from sklearn.metrics import pairwise_distances_argmin
+from sklearn.decomposition import PCA
 
 import torch
 from torchvision import models, transforms
@@ -16,16 +17,19 @@ from ..interfaces import RepresentativeSelection
 
 logger = logging.getLogger(__name__)
 
-class feature_extracted_DBSCAN_GMM(RepresentativeSelection):
+class feature_extracted_PCA_DBSCAN_GMM(RepresentativeSelection):
 
     def __init__(self,
                  num_representatives: int=5,
-                 DBSCAN_eps: float = 0.5,
-                 DBSCAN_min_samples: int = 5,
+                 PCA__n_components: int = 20,
+                 DBSCAN__eps: float = 0.3,
+                 DBSCAN__min_samples: int = 20,
                  class_whitelist: List[str]=None):
-        """ First extract features from the image classes, then apply DBSCAN
-            clustering. Based on the cardinality of each cluster, apply GMM
-            with different n-component, select the mean.
+        """ Extract features by pretrained vgg19 model,
+            apply PCA for dimention reduction,
+            then apply DBSCAN clustering to fliter outliers out.
+            Based on the cardinality of each cluster,
+            apply GMM with different n-component, select the mean.
             Finally, a pairwise Euclidean is used for finding images
             nearest to the cluster means.
 
@@ -36,10 +40,11 @@ class feature_extracted_DBSCAN_GMM(RepresentativeSelection):
         logger.debug('Creating feature_extracted_DBSCAN_GMM.')
         self.num_representatives = num_representatives
         self.class_whitelist = set(class_whitelist) if class_whitelist else None
-        self.DBSCAN = DBSCAN(eps = DBSCAN_eps, min_samples = DBSCAN_min_samples)
         self.vgg19 = models.vgg19(pretrained=True)
         if torch.cuda.is_available():
             self.vgg19 = self.vgg19.cuda()
+        self.PCA = PCA(n_components = PCA__n_components)
+        self.DBSCAN = DBSCAN(eps = DBSCAN__eps, min_samples = DBSCAN__min_samples)
 
         # ToTensor will convert an RGB image (HxWxC) with values [0, 255] to
         # an RGB tensor of (CxHxW) with values [0,1]
@@ -82,14 +87,13 @@ class feature_extracted_DBSCAN_GMM(RepresentativeSelection):
 
         logger.debug('---- Extracting features for images...')
         extracted_features = self.__extract_features(loaded)
-        f_shape = extracted_features.shape
         # Flatten features to a vector
-        features = np.reshape(extracted_features, (f_shape[0], f_shape[1]*f_shape[2]*f_shape[3]))
+        extracted_features = np.reshape(extracted_features, (extracted_features.shape[0], -1))
+        extracted_features = (extracted_features - np.min(extracted_features)) / (np.max(extracted_features) - np.min(extracted_features))
+        features = self.PCA.fit_transform(extracted_features)
 
         logger.debug('---- Cluster phase 1...')
         # normalize the magnitude of features to [0,1], i dont know if the output will be negative...
-        features = (features - np.min(features)) / (np.max(features) - np.min(features))
-
         self.DBSCAN.fit(features)
         #note: DBSCAN will generate different group label each time,
         #but the cluster is the same, thus the result is the same

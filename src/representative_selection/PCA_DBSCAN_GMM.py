@@ -18,9 +18,9 @@ class PCA_DBSCAN_GMM(RepresentativeSelection):
 
     def __init__(self,
                  num_represenatives: int = 40,
-                 PCA_N_components: int = 5,
-                 DBSCAN_eps: float = 0.5,
-                 DBSCAN_min_samples: int = 5,
+                 PCA__N_components: int = 5,
+                 DBSCAN__eps: float = 0.5,
+                 DBSCAN__min_samples: int = 5,
                  class_whitelist: List[str] = None):
         """
         The representative selection procedure
@@ -33,9 +33,9 @@ class PCA_DBSCAN_GMM(RepresentativeSelection):
         input:
             data: numpy.ndarray, the dataset of image, in current setting, each image need to be flattened (sklearn.PCA only takes flattened value)
             N_represenative: int, the minimal value of representative, the final result may have higher number
-            PCA_N_components: int, the number of component for PCA
-            DBSCAN_eps: float, the eps hyperparameter fpr DBSCAN
-            DBSCAN_min_samples: int
+            PCA__N_components: int, the number of component for PCA
+            DBSCAN__eps: float, the eps hyperparameter fpr DBSCAN
+            DBSCAN__min_samples: int
 
         output:
             rep_list: list of int, the index of representatives in the dataset
@@ -43,8 +43,8 @@ class PCA_DBSCAN_GMM(RepresentativeSelection):
         """
         logger.debug('Creating PCA_DBSCAN_GMM_Clusters.')
         self.num_representatives = num_representatives
-        self.PCA = PCA(n_components=PCA_N_components)
-        self.DBSCAN = DBSCAN(eps = DBSCAN_eps, min_samples = DBSCAN_min_samples)
+        self.PCA = PCA(n_components = PCA__N_components)
+        self.DBSCAN = DBSCAN(eps = DBSCAN__eps, min_samples = DBSCAN__min_samples)
         self.class_whitelist = set(class_whitelist) if class_whitelist else None
 
     def select_samples(self, input_dataset):

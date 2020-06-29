@@ -21,9 +21,9 @@ class feature_extracted_PCA_DBSCAN_GMM(RepresentativeSelection):
 
     def __init__(self,
                  num_representatives: int=5,
-                 PCA__n_components: int = 20,
-                 DBSCAN__eps: float = 0.3,
-                 DBSCAN__min_samples: int = 20,
+                 PCA__n_components: int = 50,
+                 DBSCAN__eps: float = 0.75,
+                 DBSCAN__min_samples: int = 3,
                  class_whitelist: List[str]=None):
         """ Extract features by pretrained vgg19 model,
             apply PCA for dimention reduction,
